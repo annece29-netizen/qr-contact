@@ -63,6 +63,3 @@ L'application peut être déployée sur :
 3. Scanner le QR Code avec un smartphone.
 4. Enregistrer le contact dans le carnet d'adresses.
 
-## Licence
-
-Projet open source distribué sous licence MIT.
