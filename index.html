@@ -69,7 +69,9 @@
     }
     @media (max-width: 800px) {
       .app-body { grid-template-columns: 1fr; }
-      .preview-col { order: -1; }
+      /* Sur mobile : aperçu masqué pendant la saisie, visible seulement à l'étape 5 */
+      .preview-col { display: none; }
+      .preview-col.show-mobile { display: block; order: -1; }
     }
 
     /* ── STEPPER ── */
@@ -625,7 +627,11 @@
 // ── DONNÉES ──────────────────────────────────────────────────────────────────
 let cardData = {
   prenom: '', nom: '', titre: '', entreprise: '',
-  photo: '', photoFull: '', photoQR: '', logo: '',
+  photo: '',       // 300px/0.7 — aperçu local + .vcf via bouton "Ajouter à mes contacts"
+  photoFull: '',   // alias de photo (rétrocompatibilité import JSON ancien)
+  photoLink: '',   // 150px/0.55 — version allégée pour l'URL partageable (évite troncature Safari)
+  photoQR: '',     // 60px/0.3  — ultra-mini pour le vCard dans le QR code
+  logo: '',
   email: '', tel: '', adresse: '',
   web: '', linkedin: '', instagram: '', facebook: '', twitter: '', substack: '',
   docs: [],
@@ -740,15 +746,18 @@ function handleImage(event, field, thumbId, isLogo) {
       renderPreview();
     });
   } else {
-    // photo : trois compressions
+    // photo : trois compressions en parallèle (chaînées)
     compressImage(file, 300, 0.7, false, (full) => {
-      cardData.photoFull = full;
-      cardData.photo = full; // utilisé pour l'aperçu et le .vcf via lien
-      compressImage(file, 60, 0.3, false, (qrMini) => {
-        cardData.photoQR = qrMini; // ultra-mini pour le vCard dans le QR
-        document.getElementById(thumbId).innerHTML = `<img src="${full}" />`;
-        renderPreview();
-        if (currentStep === 5) generateQR();
+      cardData.photo = full;
+      cardData.photoFull = full; // rétrocompatibilité
+      compressImage(file, 150, 0.55, false, (medium) => {
+        cardData.photoLink = medium; // pour l'URL partageable
+        compressImage(file, 60, 0.3, false, (qrMini) => {
+          cardData.photoQR = qrMini; // pour le vCard dans le QR
+          document.getElementById(thumbId).innerHTML = `<img src="${full}" />`;
+          renderPreview();
+          if (currentStep === 5) generateQR();
+        });
       });
     });
   }
@@ -812,6 +821,12 @@ function goToStep(n) {
     else if (i === n) btn.classList.add('active');
   }
   currentStep = n;
+  // Sur mobile : afficher l'aperçu seulement à l'étape 5
+  const previewCol = document.querySelector('.preview-col');
+  if (previewCol) {
+    if (n === 5) previewCol.classList.add('show-mobile');
+    else previewCol.classList.remove('show-mobile');
+  }
   if (n === 5) generateQR();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -829,8 +844,7 @@ function wcagTextColor(hex) {
 function renderCardHTML(data) {
   const textColor = wcagTextColor(data.colorPrimary || '#6c63ff');
   const accentColor = data.colorAccent || '#ff6584';
-  // Afficher la photo en pleine qualité (photoFull) si dispo, sinon photo compressée
-  const photoSrc = data.photoFull || data.photo || '';
+  const photoSrc = data.photoFull || data.photoLink || data.photo || '';
 
   const avatarHTML = photoSrc
     ? `<img src="${photoSrc}" alt="Photo" />`
@@ -918,9 +932,15 @@ function buildVCardForQR() {
   return vcf;
 }
 
-// URL complète pour partage par lien (avec photoFull)
+// URL partageable — utilise photoLink (150px) pour rester sous ~8000 chars (limite Safari iOS)
 function buildShareURL() {
-  const encoded = encodeCard(cardData);
+  const payload = Object.assign({}, cardData, {
+    photo: cardData.photoLink || cardData.photo || '',
+    photoFull: cardData.photoLink || cardData.photo || '',
+    photoLink: '',  // inutile de le stocker dans l'URL
+    photoQR: ''     // inutile dans l'URL, uniquement pour le QR
+  });
+  const encoded = encodeCard(payload);
   const base = window.location.origin + window.location.pathname;
   return `${base}#card=${encoded}`;
 }
@@ -1215,7 +1235,7 @@ function initViewMode() {
 function renderCardHTMLNoFooter(data) {
   const textColor = wcagTextColor(data.colorPrimary || '#6c63ff');
   const accentColor = data.colorAccent || '#ff6584';
-  const photoSrc = data.photoFull || data.photo || '';
+  const photoSrc = data.photoFull || data.photoLink || data.photo || '';
 
   const avatarHTML = photoSrc
     ? `<img src="${photoSrc}" alt="Photo" />`
