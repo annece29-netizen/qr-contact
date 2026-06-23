@@ -582,7 +582,7 @@
       <div class="form-card" id="step-5" style="display:none">
         <div class="result-section">
           <h2>🎉 Votre carte est prête !</h2>
-          <p>Montrez ce QR code — on le scanne et reçoit vos coordonnées complètes.</p>
+          <p>Scan du QR = ajout direct dans les contacts (nom, email, téléphone, réseaux, photo).<br>Lien = page web complète avec votre design.</p>
           <div id="qr-canvas-wrap" onclick="showQRFullscreen()" title="Cliquer pour agrandir">
             <canvas id="qr-canvas"></canvas>
             <div class="qr-hint">Appuyer pour agrandir</div>
@@ -620,7 +620,7 @@
 // ── DONNÉES ──────────────────────────────────────────────────────────────────
 let cardData = {
   prenom: '', nom: '', titre: '', entreprise: '',
-  photo: '', photoFull: '', logo: '',
+  photo: '', photoFull: '', photoQR: '', logo: '',
   email: '', tel: '', adresse: '',
   web: '', linkedin: '', instagram: '', facebook: '', twitter: '', substack: '',
   docs: [],
@@ -737,12 +737,12 @@ function handleImage(event, field, thumbId, isLogo) {
       renderPreview();
     });
   } else {
-    // photo : deux compressions
+    // photo : trois compressions
     compressImage(file, 300, 0.7, false, (full) => {
       cardData.photoFull = full;
-      // version miniature pour le QR
-      compressImage(file, 80, 0.4, false, (mini) => {
-        cardData.photo = mini;
+      cardData.photo = full; // utilisé pour l'aperçu et le .vcf via lien
+      compressImage(file, 60, 0.3, false, (qrMini) => {
+        cardData.photoQR = qrMini; // ultra-mini pour le vCard dans le QR
         document.getElementById(thumbId).innerHTML = `<img src="${full}" />`;
         renderPreview();
         if (currentStep === 5) generateQR();
@@ -878,17 +878,41 @@ function decodeCard(str) {
   return JSON.parse(decodeURIComponent(atob(str)));
 }
 
-// URL pour le QR : on essaie avec photo mini, puis sans photo si trop long
-function buildQRURL() {
-  const base = window.location.origin + window.location.pathname;
-  // Version avec photo mini
-  const withPhoto = encodeCard({ ...cardData, photoFull: '' });
-  if (withPhoto.length <= 2953) { // limite QR version 40 niveau L
-    return `${base}#card=${withPhoto}`;
+// vCard texte pour le QR (photo ultra-compressée 60px/0.3 si disponible)
+function buildVCardForQR() {
+  const fn = [cardData.prenom, cardData.nom].filter(Boolean).join(' ');
+  const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
+  lines.push(`FN:${fn}`);
+  lines.push(`N:${cardData.nom || ''};${cardData.prenom || ''};;;`);
+  if (cardData.titre) lines.push(`TITLE:${cardData.titre}`);
+  if (cardData.entreprise) lines.push(`ORG:${cardData.entreprise}`);
+  if (cardData.email) lines.push(`EMAIL:${cardData.email}`);
+  if (cardData.tel) lines.push(`TEL:${cardData.tel}`);
+  if (cardData.adresse) lines.push(`ADR:;;${cardData.adresse};;;;`);
+  if (cardData.web) lines.push(`URL:${cardData.web}`);
+  if (cardData.linkedin) lines.push(`URL;TYPE=LinkedIn:${cardData.linkedin}`);
+  if (cardData.facebook) lines.push(`URL;TYPE=Facebook:${cardData.facebook}`);
+  if (cardData.instagram) {
+    const h = cardData.instagram.startsWith('@') ? `https://instagram.com/${cardData.instagram.slice(1)}` : cardData.instagram;
+    lines.push(`URL;TYPE=Instagram:${h}`);
   }
-  // Trop long : on retire aussi la photo mini et le logo
-  const noPhoto = encodeCard({ ...cardData, photo: '', photoFull: '', logo: '' });
-  return `${base}#card=${noPhoto}`;
+  if (cardData.twitter) {
+    const h = cardData.twitter.startsWith('@') ? `https://x.com/${cardData.twitter.slice(1)}` : cardData.twitter;
+    lines.push(`URL;TYPE=X:${h}`);
+  }
+  if (cardData.substack) lines.push(`URL;TYPE=Substack:${cardData.substack}`);
+  // Photo ultra-mini si disponible
+  if (cardData.photoQR) {
+    const b64 = cardData.photoQR.split(',')[1];
+    if (b64) lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${b64}`);
+  }
+  lines.push('END:VCARD');
+  const vcf = lines.join('\n');
+  // Si trop long même sans photo, on retire la photo
+  if (vcf.length > 2700 && cardData.photoQR) {
+    return lines.filter(l => !l.startsWith('PHOTO')).join('\n');
+  }
+  return vcf;
 }
 
 // URL complète pour partage par lien (avec photoFull)
@@ -900,8 +924,8 @@ function buildShareURL() {
 
 // ── QR CODE ───────────────────────────────────────────────────────────────────
 function generateQR() {
-  const url = buildQRURL();
-  drawQROnCanvas(url, document.getElementById('qr-canvas'), 200, cardData.colorPrimary);
+  const vcf = buildVCardForQR();
+  drawQROnCanvas(vcf, document.getElementById('qr-canvas'), 200, cardData.colorPrimary);
 }
 
 function drawQROnCanvas(text, canvas, size, colorDark) {
