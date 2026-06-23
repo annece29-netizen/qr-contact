@@ -4,6 +4,7 @@
   "description": "Créez votre carte de visite numérique et partagez-la en quelques secondes",
   "start_url": "./",
   "scope": "./",
+  "id": "/qr-contact/",
   "display": "standalone",
   "background_color": "#f7f7fb",
   "theme_color": "#6c63ff",
