@@ -871,7 +871,7 @@ function renderCardHTML(data) {
     <div class="card-preview" style="--accent:${accentColor};">
       <div class="card-header" style="background:${data.colorPrimary};color:${textColor}">
         ${logoHTML}
-        <div class="card-avatar" style="border:4px solid ${accentColor}; box-shadow:0 0 0 3px rgba(255,255,255,0.35)">${avatarHTML}</div>
+        <div class="card-avatar" style="border:4px solid ${accentColor};">${avatarHTML}</div>
         <div class="card-name">${esc(data.prenom)} ${esc(data.nom)}</div>
         <div class="card-meta">${esc(data.titre)}${data.titre && data.entreprise ? ' · ' : ''}${esc(data.entreprise)}</div>
       </div>
@@ -1262,7 +1262,7 @@ function renderCardHTMLNoFooter(data) {
     <div class="card-preview" style="--accent:${accentColor};">
       <div class="card-header" style="background:${data.colorPrimary};color:${textColor}">
         ${logoHTML}
-        <div class="card-avatar" style="border:4px solid ${accentColor}; box-shadow:0 0 0 3px rgba(255,255,255,0.35)">${avatarHTML}</div>
+        <div class="card-avatar" style="border:4px solid ${accentColor};">${avatarHTML}</div>
         <div class="card-name">${esc(data.prenom)} ${esc(data.nom)}</div>
         <div class="card-meta">${esc(data.titre)}${data.titre && data.entreprise ? ' · ' : ''}${esc(data.entreprise)}</div>
       </div>
