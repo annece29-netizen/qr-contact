@@ -878,12 +878,17 @@ function decodeCard(str) {
   return JSON.parse(decodeURIComponent(atob(str)));
 }
 
-// URL pour le QR : photo mini (80px) + logo inclus
+// URL pour le QR : on essaie avec photo mini, puis sans photo si trop long
 function buildQRURL() {
-  const d = { ...cardData, photoFull: '' }; // enlève photoFull, garde photo (mini)
-  const encoded = encodeCard(d);
   const base = window.location.origin + window.location.pathname;
-  return `${base}#card=${encoded}`;
+  // Version avec photo mini
+  const withPhoto = encodeCard({ ...cardData, photoFull: '' });
+  if (withPhoto.length <= 2953) { // limite QR version 40 niveau L
+    return `${base}#card=${withPhoto}`;
+  }
+  // Trop long : on retire aussi la photo mini et le logo
+  const noPhoto = encodeCard({ ...cardData, photo: '', photoFull: '', logo: '' });
+  return `${base}#card=${noPhoto}`;
 }
 
 // URL complète pour partage par lien (avec photoFull)
