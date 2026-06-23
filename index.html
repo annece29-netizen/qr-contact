@@ -402,20 +402,7 @@
 <!-- HEADER (masqué en mode lecture) -->
 <header class="app-header" id="app-header">
   <div class="app-header-left">
-    <svg class="app-header-logo" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="36" height="36" rx="8" fill="white" fill-opacity="0.15"/>
-      <!-- QR code stylisé -->
-      <rect x="5" y="5" width="11" height="11" rx="2" stroke="white" stroke-width="2" fill="none"/>
-      <rect x="8" y="8" width="5" height="5" rx="1" fill="white"/>
-      <rect x="20" y="5" width="11" height="11" rx="2" stroke="white" stroke-width="2" fill="none"/>
-      <rect x="23" y="8" width="5" height="5" rx="1" fill="white"/>
-      <rect x="5" y="20" width="11" height="11" rx="2" stroke="white" stroke-width="2" fill="none"/>
-      <rect x="8" y="23" width="5" height="5" rx="1" fill="white"/>
-      <rect x="20" y="20" width="3" height="3" rx="0.5" fill="white"/>
-      <rect x="25" y="20" width="3" height="3" rx="0.5" fill="white"/>
-      <rect x="20" y="25" width="3" height="3" rx="0.5" fill="white"/>
-      <rect x="25" y="25" width="6" height="6" rx="1" fill="white"/>
-    </svg>
+    <canvas id="header-logo-canvas" class="app-header-logo" width="36" height="36"></canvas>
     <div>
       <h1>QR-Contact</h1>
       <div class="subtitle">Carte de visite numérique gratuite</div>
@@ -642,7 +629,45 @@ let cardData = {
 
 let currentStep = 1;
 
-// ── ICÔNE PWA ─────────────────────────────────────────────────────────────────
+// ── LOGO HEADER + ICÔNE PWA ──────────────────────────────────────────────────
+function drawQRLogo(canvas, size, bg, fg) {
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const r = size * 0.22;
+  // fond arrondi
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, r);
+  ctx.fill();
+  // dessiner un mini QR stylisé
+  ctx.fillStyle = fg;
+  const u = size / 12;
+  const sq = (x, y, w, h) => ctx.fillRect(x*u, y*u, w*u, h*u);
+  // coin haut-gauche
+  sq(1,1,4,4); ctx.fillStyle = bg; sq(1.5,1.5,3,3); ctx.fillStyle = fg; sq(2,2,2,2);
+  // coin haut-droit
+  ctx.fillStyle = fg; sq(7,1,4,4); ctx.fillStyle = bg; sq(7.5,1.5,3,3); ctx.fillStyle = fg; sq(8,2,2,2);
+  // coin bas-gauche
+  ctx.fillStyle = fg; sq(1,7,4,4); ctx.fillStyle = bg; sq(1.5,7.5,3,3); ctx.fillStyle = fg; sq(2,8,2,2);
+  // pixels bas-droit
+  ctx.fillStyle = fg;
+  sq(7,7,1.5,1.5); sq(9,7,1.5,1.5); sq(7,9,1.5,1.5); sq(9,9,2.5,2.5);
+}
+
+(function initLogos() {
+  // Logo dans le header
+  const headerCanvas = document.getElementById('header-logo-canvas');
+  if (headerCanvas) drawQRLogo(headerCanvas, 36, 'rgba(255,255,255,0.18)', '#ffffff');
+  // Icône PWA (apple-touch-icon)
+  const pwaCanvas = document.createElement('canvas');
+  drawQRLogo(pwaCanvas, 192, '#6c63ff', '#ffffff');
+  const url = pwaCanvas.toDataURL('image/png');
+  const link = document.createElement('link');
+  link.rel = 'apple-touch-icon';
+  link.href = url;
+  document.head.appendChild(link);
+})();
+
 (function generatePWAIcon() {
   const size = 192;
   const c = document.createElement('canvas');
