@@ -41,6 +41,8 @@
       justify-content: space-between;
       gap: 12px;
     }
+    .app-header-left { display: flex; align-items: center; gap: 12px; }
+    .app-header-logo { width: 36px; height: 36px; flex-shrink: 0; }
     .app-header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
     .app-header .subtitle { font-size: 0.8rem; opacity: 0.8; }
     .btn-import-header {
@@ -158,7 +160,7 @@
       margin-bottom: 8px;
       align-items: center;
     }
-    .doc-item input { font-size: 0.85rem; padding: 8px 10px; }
+    .doc-item input { font-size: 0.85rem; padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 8px; background: #fafafa; }
     .btn-remove {
       background: #fee; border: none; color: #c00;
       border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 1rem;
@@ -275,7 +277,6 @@
     }
     .card-line:last-child { border-bottom: none; }
     .card-line .icon { width: 28px; text-align: center; font-size: 1rem; color: var(--primary); flex-shrink: 0; }
-    .card-line a { color: inherit; text-decoration: none; }
     .card-footer {
       padding: 10px 16px;
       text-align: center;
@@ -356,7 +357,7 @@
       display: none;
       max-width: 480px;
       margin: 0 auto;
-      padding: 16px;
+      padding: 24px 16px;
     }
     #view-mode .card-preview { box-shadow: var(--shadow); }
     .btn-add-contact {
@@ -376,6 +377,13 @@
       gap: 8px;
     }
     .btn-add-contact:hover { background: #16a34a; }
+    .view-credit {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 0.75rem;
+      color: #aaa;
+    }
+    .view-credit a { color: var(--primary); text-decoration: none; }
 
     /* ── TOAST ── */
     #toast {
@@ -391,11 +399,27 @@
 </head>
 <body>
 
-<!-- HEADER -->
-<header class="app-header">
-  <div>
-    <h1>QR-Contact</h1>
-    <div class="subtitle">Carte de visite numérique gratuite</div>
+<!-- HEADER (masqué en mode lecture) -->
+<header class="app-header" id="app-header">
+  <div class="app-header-left">
+    <svg class="app-header-logo" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="36" height="36" rx="8" fill="white" fill-opacity="0.15"/>
+      <!-- QR code stylisé -->
+      <rect x="5" y="5" width="11" height="11" rx="2" stroke="white" stroke-width="2" fill="none"/>
+      <rect x="8" y="8" width="5" height="5" rx="1" fill="white"/>
+      <rect x="20" y="5" width="11" height="11" rx="2" stroke="white" stroke-width="2" fill="none"/>
+      <rect x="23" y="8" width="5" height="5" rx="1" fill="white"/>
+      <rect x="5" y="20" width="11" height="11" rx="2" stroke="white" stroke-width="2" fill="none"/>
+      <rect x="8" y="23" width="5" height="5" rx="1" fill="white"/>
+      <rect x="20" y="20" width="3" height="3" rx="0.5" fill="white"/>
+      <rect x="25" y="20" width="3" height="3" rx="0.5" fill="white"/>
+      <rect x="20" y="25" width="3" height="3" rx="0.5" fill="white"/>
+      <rect x="25" y="25" width="6" height="6" rx="1" fill="white"/>
+    </svg>
+    <div>
+      <h1>QR-Contact</h1>
+      <div class="subtitle">Carte de visite numérique gratuite</div>
+    </div>
   </div>
   <button class="btn-import-header" onclick="triggerImport()">📂 Importer une carte (.json)</button>
   <input type="file" id="import-file" accept=".json" onchange="importJSON(event)" />
@@ -407,7 +431,7 @@
   <button class="btn-add-contact" onclick="downloadVCF()">
     ➕ Ajouter à mes contacts
   </button>
-  <div class="card-footer" style="text-align:center; margin-top:12px; font-size:0.75rem; color:#aaa;">
+  <div class="view-credit">
     Carte créée avec <strong>QR-Contact</strong> — Application gratuite d'<a href="https://www.linkedin.com/in/annececileledain/" target="_blank" rel="noopener">Anne-Cécile Le Dain</a>
   </div>
 </div>
@@ -432,20 +456,20 @@
         <div class="field-row">
           <div class="field">
             <label>Prénom</label>
-            <input type="text" id="f-prenom" placeholder="Anne-Cécile" oninput="syncField('prenom', this.value)" />
+            <input type="text" id="f-prenom" placeholder="Sophie" oninput="syncField('prenom', this.value)" />
           </div>
           <div class="field">
             <label>Nom</label>
-            <input type="text" id="f-nom" placeholder="Le Dain" oninput="syncField('nom', this.value)" />
+            <input type="text" id="f-nom" placeholder="MARTIN" oninput="syncField('nom', this.value)" />
           </div>
         </div>
         <div class="field">
           <label>Titre / Métier</label>
-          <input type="text" id="f-titre" placeholder="Conseil & Stratégie IA pour TPE-PME" oninput="syncField('titre', this.value)" />
+          <input type="text" id="f-titre" placeholder="Directrice Commerciale" oninput="syncField('titre', this.value)" />
         </div>
         <div class="field">
           <label>Entreprise</label>
-          <input type="text" id="f-entreprise" placeholder="KléIA" oninput="syncField('entreprise', this.value)" />
+          <input type="text" id="f-entreprise" placeholder="Agence Lumière" oninput="syncField('entreprise', this.value)" />
         </div>
 
         <!-- Photo de profil -->
@@ -458,7 +482,7 @@
               Recommandé : carré, visage centré
             </div>
           </div>
-          <input type="file" id="input-photo" accept="image/*" onchange="handleImage(event, 'photo', 'thumb-photo', 300, 0.6, false)" />
+          <input type="file" id="input-photo" accept="image/*" onchange="handleImage(event, 'photo', 'thumb-photo', false)" />
         </div>
 
         <!-- Logo -->
@@ -471,7 +495,7 @@
               PNG avec fond transparent idéal
             </div>
           </div>
-          <input type="file" id="input-logo" accept="image/*" onchange="handleImage(event, 'logo', 'thumb-logo', 240, 0.75, true)" />
+          <input type="file" id="input-logo" accept="image/*" onchange="handleImage(event, 'logo', 'thumb-logo', true)" />
         </div>
 
         <div class="form-nav">
@@ -485,15 +509,15 @@
         <h2>📞 Contact</h2>
         <div class="field">
           <label>Email</label>
-          <input type="email" id="f-email" placeholder="anne@exemple.com" oninput="syncField('email', this.value)" />
+          <input type="email" id="f-email" placeholder="sophie@agence-lumiere.fr" oninput="syncField('email', this.value)" />
         </div>
         <div class="field">
           <label>Téléphone</label>
-          <input type="tel" id="f-tel" placeholder="06 XX XX XX XX" oninput="syncField('tel', this.value)" />
+          <input type="tel" id="f-tel" placeholder="06 12 34 56 78" oninput="syncField('tel', this.value)" />
         </div>
         <div class="field">
           <label>Ville / Adresse</label>
-          <input type="text" id="f-adresse" placeholder="Rennes, France" oninput="syncField('adresse', this.value)" />
+          <input type="text" id="f-adresse" placeholder="Brest, Bretagne" oninput="syncField('adresse', this.value)" />
         </div>
         <div class="form-nav">
           <button class="btn-secondary" onclick="goToStep(1)">← Précédent</button>
@@ -609,7 +633,7 @@
 // ── DONNÉES ──────────────────────────────────────────────────────────────────
 let cardData = {
   prenom: '', nom: '', titre: '', entreprise: '',
-  photo: '', logo: '',
+  photo: '', photoFull: '', logo: '',
   email: '', tel: '', adresse: '',
   web: '', linkedin: '', instagram: '', facebook: '', twitter: '', substack: '',
   docs: [],
@@ -620,20 +644,33 @@ let currentStep = 1;
 
 // ── ICÔNE PWA ─────────────────────────────────────────────────────────────────
 (function generatePWAIcon() {
+  const size = 192;
   const c = document.createElement('canvas');
-  c.width = 192; c.height = 192;
+  c.width = size; c.height = size;
   const ctx = c.getContext('2d');
+  // fond violet arrondi
   ctx.fillStyle = '#6c63ff';
   ctx.beginPath();
-  ctx.roundRect(0, 0, 192, 192, 36);
+  ctx.roundRect(0, 0, size, size, size * 0.2);
   ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 100px serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('QR', 96, 96);
+  // dessiner un QR code simplifié en blanc
+  const draw = (x, y, w, h, fill) => {
+    ctx.fillStyle = fill;
+    ctx.fillRect(x, y, w, h);
+  };
+  const u = size / 36; // unité
+  ctx.fillStyle = 'white';
+  // coin haut-gauche
+  ctx.strokeStyle = 'white'; ctx.lineWidth = u * 2;
+  const sq = (x, y, s) => { ctx.strokeRect(x*u, y*u, s*u, s*u); };
+  sq(5,5,11); draw(8*u,8*u,5*u,5*u,'white');
+  sq(20,5,11); draw(23*u,8*u,5*u,5*u,'white');
+  sq(5,20,11); draw(8*u,23*u,5*u,5*u,'white');
+  draw(20*u,20*u,3*u,3*u,'white');
+  draw(25*u,20*u,3*u,3*u,'white');
+  draw(20*u,25*u,3*u,3*u,'white');
+  draw(25*u,25*u,6*u,6*u,'white');
   const url = c.toDataURL('image/png');
-  document.querySelectorAll('link[rel="apple-touch-icon"]').forEach(l => l.href = url);
   const link = document.createElement('link');
   link.rel = 'apple-touch-icon';
   link.href = url;
@@ -662,15 +699,31 @@ function syncHex(key, colorId, value) {
 }
 
 // ── IMAGES ───────────────────────────────────────────────────────────────────
-function handleImage(event, field, thumbId, maxSize, quality, isLogo) {
+// Deux versions de la photo :
+// - photoFull : 300px / qualité 0.7 — pour la carte visible via le lien (bonne qualité)
+// - photo     : 80px  / qualité 0.4 — ultra-compressée pour tenir dans le QR code
+function handleImage(event, field, thumbId, isLogo) {
   const file = event.target.files[0];
   if (!file) return;
-  compressImage(file, maxSize, quality, isLogo, (b64) => {
-    cardData[field] = b64;
-    const thumb = document.getElementById(thumbId);
-    thumb.innerHTML = `<img src="${b64}" />`;
-    renderPreview();
-  });
+  if (isLogo) {
+    compressImage(file, 240, 0.75, true, (b64) => {
+      cardData.logo = b64;
+      document.getElementById(thumbId).innerHTML = `<img src="${b64}" />`;
+      renderPreview();
+    });
+  } else {
+    // photo : deux compressions
+    compressImage(file, 300, 0.7, false, (full) => {
+      cardData.photoFull = full;
+      // version miniature pour le QR
+      compressImage(file, 80, 0.4, false, (mini) => {
+        cardData.photo = mini;
+        document.getElementById(thumbId).innerHTML = `<img src="${full}" />`;
+        renderPreview();
+        if (currentStep === 5) generateQR();
+      });
+    });
+  }
 }
 
 function compressImage(file, maxPx, quality, isLogo, callback) {
@@ -709,10 +762,10 @@ function renderDocsList() {
   const list = document.getElementById('docs-list');
   list.innerHTML = cardData.docs.map((d, i) => `
     <div class="doc-item">
-      <input class="field input" type="text" placeholder="Titre (ex: Plaquette)"
+      <input type="text" placeholder="Titre (ex: Plaquette)"
         value="${esc(d.titre)}"
         oninput="cardData.docs[${i}].titre=this.value;renderPreview()" />
-      <input class="field input" type="url" placeholder="https://..."
+      <input type="url" placeholder="https://..."
         value="${esc(d.url)}"
         oninput="cardData.docs[${i}].url=this.value;renderPreview()" />
       <button class="btn-remove" onclick="removeDoc(${i})">✕</button>
@@ -748,9 +801,11 @@ function wcagTextColor(hex) {
 function renderCardHTML(data) {
   const textColor = wcagTextColor(data.colorPrimary || '#6c63ff');
   const accentColor = data.colorAccent || '#ff6584';
+  // Afficher la photo en pleine qualité (photoFull) si dispo, sinon photo compressée
+  const photoSrc = data.photoFull || data.photo || '';
 
-  const avatarHTML = data.photo
-    ? `<img src="${data.photo}" alt="Photo" />`
+  const avatarHTML = photoSrc
+    ? `<img src="${photoSrc}" alt="Photo" />`
     : `<span>${(data.prenom || '?')[0]}${(data.nom || '')[0] || ''}</span>`;
 
   const logoHTML = data.logo
@@ -766,7 +821,7 @@ function renderCardHTML(data) {
   if (data.facebook) lines.push(`<a class="card-line" href="${esc(data.facebook)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">f</span><span>Facebook</span></a>`);
   if (data.twitter) lines.push(`<a class="card-line" href="https://x.com/${esc(data.twitter.replace('@',''))}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">𝕏</span><span>X / Twitter ${esc(data.twitter)}</span></a>`);
   if (data.substack) lines.push(`<a class="card-line" href="${esc(data.substack)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">📝</span><span>Articles Substack</span></a>`);
-  data.docs.forEach(d => {
+  (data.docs || []).forEach(d => {
     if (d.url) lines.push(`<a class="card-line" href="${esc(d.url)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">📄</span><span>${esc(d.titre || 'Document')}</span></a>`);
   });
 
@@ -798,52 +853,36 @@ function decodeCard(str) {
   return JSON.parse(decodeURIComponent(atob(str)));
 }
 
-function buildCardURL(includePhoto) {
-  const d = includePhoto ? cardData : { ...cardData, photo: '', logo: '' };
+// URL pour le QR : photo mini (80px) + logo inclus
+function buildQRURL() {
+  const d = { ...cardData, photoFull: '' }; // enlève photoFull, garde photo (mini)
   const encoded = encodeCard(d);
+  const base = window.location.origin + window.location.pathname;
+  return `${base}#card=${encoded}`;
+}
+
+// URL complète pour partage par lien (avec photoFull)
+function buildShareURL() {
+  const encoded = encodeCard(cardData);
   const base = window.location.origin + window.location.pathname;
   return `${base}#card=${encoded}`;
 }
 
 // ── QR CODE ───────────────────────────────────────────────────────────────────
 function generateQR() {
-  const url = buildCardURL(false); // sans photo pour que le QR reste lisible
-  drawQROnCanvas(url, document.getElementById('qr-canvas'), 200, cardData.colorPrimary, cardData.colorAccent);
+  const url = buildQRURL();
+  drawQROnCanvas(url, document.getElementById('qr-canvas'), 200, cardData.colorPrimary);
 }
 
-function drawQROnCanvas(text, canvas, size, colorDark, colorLight) {
-  try {
-    const qr = qrcode(0, 'M');
-    qr.addData(text);
-    qr.make();
-    const modules = qr.getModuleCount();
-    const scale = Math.floor(size / modules);
-    const actualSize = modules * scale;
-    canvas.width = actualSize;
-    canvas.height = actualSize;
-    const ctx = canvas.getContext('2d');
-    // fond blanc
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, actualSize, actualSize);
-    // modules noirs d'abord
-    ctx.fillStyle = '#000000';
-    for (let r = 0; r < modules; r++) {
-      for (let c = 0; c < modules; c++) {
-        if (qr.isDark(r, c)) {
-          ctx.fillRect(c * scale, r * scale, scale, scale);
-        }
-      }
-    }
-    // coloration pixel par pixel
-    colorizeQRCanvas(canvas, colorDark || '#000000');
-  } catch (e) {
-    // si le texte est trop long, on essaie avec correction L
+function drawQROnCanvas(text, canvas, size, colorDark) {
+  // Essaie niveau M, puis L si trop long
+  for (const level of ['M', 'L']) {
     try {
-      const qr = qrcode(0, 'L');
+      const qr = qrcode(0, level);
       qr.addData(text);
       qr.make();
       const modules = qr.getModuleCount();
-      const scale = Math.floor(size / modules);
+      const scale = Math.max(2, Math.floor(size / modules));
       const actualSize = modules * scale;
       canvas.width = actualSize;
       canvas.height = actualSize;
@@ -857,8 +896,10 @@ function drawQROnCanvas(text, canvas, size, colorDark, colorLight) {
         }
       }
       colorizeQRCanvas(canvas, colorDark || '#000000');
-    } catch(e2) { console.error('QR trop long', e2); }
+      return; // succès
+    } catch (e) { /* essaie le niveau suivant */ }
   }
+  console.error('QR code impossible à générer (données trop longues)');
 }
 
 function colorizeQRCanvas(canvas, hexColor) {
@@ -870,9 +911,7 @@ function colorizeQRCanvas(canvas, hexColor) {
   const g = parseInt(hexColor.slice(3, 5), 16);
   const b = parseInt(hexColor.slice(5, 7), 16);
   for (let i = 0; i < d.length; i += 4) {
-    if (d[i] < 128) { // pixel sombre = module QR
-      d[i] = r; d[i+1] = g; d[i+2] = b;
-    }
+    if (d[i] < 128) { d[i] = r; d[i+1] = g; d[i+2] = b; }
   }
   ctx.putImageData(imageData, 0, 0);
 }
@@ -881,8 +920,8 @@ function colorizeQRCanvas(canvas, hexColor) {
 function showQRFullscreen() {
   const fs = document.getElementById('qr-fullscreen');
   const canvas = document.getElementById('qr-fullscreen-canvas');
-  const url = buildCardURL(false);
-  drawQROnCanvas(url, canvas, Math.min(window.innerWidth - 60, 380), cardData.colorPrimary, cardData.colorAccent);
+  const fsSize = Math.min(window.innerWidth - 60, window.innerHeight - 120, 380);
+  drawQROnCanvas(buildQRURL(), canvas, fsSize, cardData.colorPrimary);
   document.getElementById('qr-fullscreen-name').textContent =
     [cardData.prenom, cardData.nom].filter(Boolean).join(' ') || 'Ma carte';
   fs.classList.add('show');
@@ -896,50 +935,52 @@ document.getElementById('qr-fullscreen').addEventListener('click', function(e) {
 
 // ── TÉLÉCHARGEMENT QR PERSONNALISÉ ────────────────────────────────────────────
 function downloadQR() {
-  const qrSize = 280;
-  const padding = 24;
-  const textHeight = 56;
-  const totalH = qrSize + padding * 2 + textHeight;
+  const qrSize = 300;
+  const padding = 28;
+  const textHeight = 60;
   const totalW = qrSize + padding * 2;
+  const totalH = qrSize + padding * 2 + textHeight;
 
   const c = document.createElement('canvas');
-  c.width = totalW; c.height = totalH;
+  c.width = totalW;
+  c.height = totalH;
   const ctx = c.getContext('2d');
 
-  // fond blanc
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, totalW, totalH);
 
-  // QR dans un canvas temporaire
+  // QR dans un canvas temporaire puis centré
   const qrCanvas = document.createElement('canvas');
-  const url = buildCardURL(false);
-  drawQROnCanvas(url, qrCanvas, qrSize, cardData.colorPrimary, cardData.colorAccent);
+  drawQROnCanvas(buildQRURL(), qrCanvas, qrSize, cardData.colorPrimary);
 
-  ctx.drawImage(qrCanvas, padding, padding);
+  // Centrer le QR horizontalement
+  const qrX = Math.round((totalW - qrCanvas.width) / 2);
+  ctx.drawImage(qrCanvas, qrX, padding);
 
-  // texte
+  // Texte centré sous le QR
   const name = [cardData.prenom, cardData.nom].filter(Boolean).join(' ') || 'Ma carte';
   const sub = cardData.entreprise || cardData.titre || '';
+  const textY = padding + qrCanvas.height + padding;
   ctx.fillStyle = '#222';
-  ctx.font = 'bold 18px Segoe UI, sans-serif';
+  ctx.font = 'bold 18px Segoe UI, Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(name, totalW / 2, qrSize + padding * 2 + 18);
+  ctx.fillText(name, totalW / 2, textY + 18);
   if (sub) {
     ctx.fillStyle = '#777';
-    ctx.font = '13px Segoe UI, sans-serif';
-    ctx.fillText(sub, totalW / 2, qrSize + padding * 2 + 38);
+    ctx.font = '13px Segoe UI, Arial, sans-serif';
+    ctx.fillText(sub, totalW / 2, textY + 40);
   }
 
   const a = document.createElement('a');
   a.href = c.toDataURL('image/png');
-  a.download = `qr-contact-${(name).replace(/\s+/g, '-').toLowerCase()}.png`;
+  a.download = `qr-contact-${name.replace(/\s+/g, '-').toLowerCase()}.png`;
   a.click();
   showToast('QR code téléchargé !');
 }
 
 // ── COPIER LIEN ───────────────────────────────────────────────────────────────
 function copyCardLink() {
-  const url = buildCardURL(true); // avec photo
+  const url = buildShareURL(); // avec photoFull
   navigator.clipboard.writeText(url).then(() => {
     showToast('Lien copié dans le presse-papiers !');
   }).catch(() => {
@@ -987,8 +1028,9 @@ function fillFormFromData() {
     const el = document.getElementById(`f-${k}`);
     if (el) el.value = cardData[k] || '';
   });
-  if (cardData.photo) {
-    document.getElementById('thumb-photo').innerHTML = `<img src="${cardData.photo}" />`;
+  const photoDisplay = cardData.photoFull || cardData.photo || '';
+  if (photoDisplay) {
+    document.getElementById('thumb-photo').innerHTML = `<img src="${photoDisplay}" />`;
   }
   if (cardData.logo) {
     document.getElementById('thumb-logo').innerHTML = `<img src="${cardData.logo}" />`;
@@ -1004,7 +1046,7 @@ function fillFormFromData() {
   renderDocsList();
 }
 
-// ── VCARDS ────────────────────────────────────────────────────────────────────
+// ── VCF ───────────────────────────────────────────────────────────────────────
 function generateVCF(data) {
   const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
   const fullName = [data.prenom, data.nom].filter(Boolean).join(' ');
@@ -1027,22 +1069,20 @@ function generateVCF(data) {
     lines.push(`URL;TYPE=Twitter:${h}`);
   }
   if (data.substack) lines.push(`URL;TYPE=Substack:${data.substack}`);
-  data.docs && data.docs.forEach(d => {
+  (data.docs || []).forEach(d => {
     if (d.url) lines.push(`URL;TYPE=${d.titre || 'Document'}:${d.url}`);
   });
-  // Photo en base64 dans le vCard (format 3.0, supporté iOS/Android)
-  if (data.photo) {
-    const b64 = data.photo.split(',')[1];
-    if (b64) {
-      lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${b64}`);
-    }
+  // Photo : priorité à photoFull, sinon photo (mini)
+  const photoSrc = data.photoFull || data.photo || '';
+  if (photoSrc) {
+    const b64 = photoSrc.split(',')[1];
+    if (b64) lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${b64}`);
   }
   lines.push('END:VCARD');
   return lines.join('\r\n');
 }
 
 function downloadVCF() {
-  // En mode lecture : utiliser viewData, sinon cardData
   const data = window._viewData || cardData;
   const vcf = generateVCF(data);
   const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
@@ -1060,15 +1100,59 @@ function initViewMode() {
   try {
     const data = decodeCard(hash.slice(6));
     window._viewData = data;
+    // Masquer le header (bouton import non pertinent pour le destinataire)
+    document.getElementById('app-header').style.display = 'none';
     document.getElementById('create-mode').style.display = 'none';
     document.getElementById('view-mode').style.display = 'block';
-    document.getElementById('view-card').innerHTML = renderCardHTML(data);
+    // La carte ne montre PAS la mention créatrice dans le HTML de la carte elle-même
+    // (elle est affichée une seule fois via .view-credit en dessous du bouton)
+    document.getElementById('view-card').innerHTML = renderCardHTMLNoFooter(data);
     document.title = [data.prenom, data.nom].filter(Boolean).join(' ') + ' — QR-Contact';
     return true;
   } catch (e) {
     console.error('Erreur décodage carte', e);
     return false;
   }
+}
+
+// Variante sans footer créatrice (utilisée en mode lecture — le footer est affiché séparément)
+function renderCardHTMLNoFooter(data) {
+  const textColor = wcagTextColor(data.colorPrimary || '#6c63ff');
+  const accentColor = data.colorAccent || '#ff6584';
+  const photoSrc = data.photoFull || data.photo || '';
+
+  const avatarHTML = photoSrc
+    ? `<img src="${photoSrc}" alt="Photo" />`
+    : `<span>${(data.prenom || '?')[0]}${(data.nom || '')[0] || ''}</span>`;
+
+  const logoHTML = data.logo
+    ? `<div class="card-logo-wrap"><img src="${data.logo}" alt="Logo" /></div>` : '';
+
+  const lines = [];
+  if (data.email) lines.push(`<a class="card-line" href="mailto:${esc(data.email)}"><span class="icon" style="color:${accentColor}">✉️</span><span>${esc(data.email)}</span></a>`);
+  if (data.tel) lines.push(`<a class="card-line" href="tel:${esc(data.tel)}"><span class="icon" style="color:${accentColor}">📞</span><span>${esc(data.tel)}</span></a>`);
+  if (data.adresse) lines.push(`<div class="card-line"><span class="icon" style="color:${accentColor}">📍</span><span>${esc(data.adresse)}</span></div>`);
+  if (data.web) lines.push(`<a class="card-line" href="${esc(data.web)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">🌐</span><span>Site web</span></a>`);
+  if (data.linkedin) lines.push(`<a class="card-line" href="${esc(data.linkedin)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">in</span><span>Profil LinkedIn</span></a>`);
+  if (data.instagram) lines.push(`<a class="card-line" href="https://instagram.com/${esc(data.instagram.replace('@',''))}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">📷</span><span>Instagram ${esc(data.instagram)}</span></a>`);
+  if (data.facebook) lines.push(`<a class="card-line" href="${esc(data.facebook)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">f</span><span>Facebook</span></a>`);
+  if (data.twitter) lines.push(`<a class="card-line" href="https://x.com/${esc(data.twitter.replace('@',''))}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">𝕏</span><span>X / Twitter ${esc(data.twitter)}</span></a>`);
+  if (data.substack) lines.push(`<a class="card-line" href="${esc(data.substack)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">📝</span><span>Articles Substack</span></a>`);
+  (data.docs || []).forEach(d => {
+    if (d.url) lines.push(`<a class="card-line" href="${esc(d.url)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">📄</span><span>${esc(d.titre || 'Document')}</span></a>`);
+  });
+
+  return `
+    <div class="card-preview">
+      <div class="card-header" style="background:${data.colorPrimary};color:${textColor}">
+        ${logoHTML}
+        <div class="card-avatar">${avatarHTML}</div>
+        <div class="card-name">${esc(data.prenom)} ${esc(data.nom)}</div>
+        <div class="card-meta">${esc(data.titre)}${data.titre && data.entreprise ? ' · ' : ''}${esc(data.entreprise)}</div>
+      </div>
+      <div class="card-body">${lines.join('')}</div>
+    </div>
+  `;
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
