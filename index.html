@@ -68,11 +68,51 @@
       align-items: start;
     }
     @media (max-width: 800px) {
-      .app-body { grid-template-columns: 1fr; }
-      /* Sur mobile : aperçu masqué pendant la saisie, visible seulement à l'étape 5 */
-      .preview-col { display: none; }
-      .preview-col.show-mobile { display: block; order: -1; }
-    }
+     @media (max-width: 800px) {
+  .app-header {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .app-body {
+    grid-template-columns: 1fr;
+    padding: 20px 16px;
+  }
+
+  .preview-col {
+    display: none;
+    position: static;
+    width: 100%;
+  }
+
+  .preview-col.show-mobile {
+    display: block;
+    order: 2;
+    margin-top: 24px;
+  }
+
+  .form-col {
+    order: 1;
+  }
+
+  .card-preview {
+    width: 100%;
+  }
+
+  #step-5 {
+    margin-top: 0;
+  }
+
+  #qr-canvas-wrap {
+    max-width: 100%;
+    overflow: auto;
+  }
+
+  .action-btns {
+    width: 100%;
+    max-width: none;
+  }
+}
 
     /* ── STEPPER ── */
     .stepper {
@@ -254,7 +294,13 @@
       overflow: hidden;
       border: 4px solid var(--accent);
     }
-    .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
     .card-logo-wrap {
       position: absolute; top: 12px; right: 12px;
       width: 64px; height: 56px;
