@@ -255,13 +255,15 @@
     .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .card-logo-wrap {
       position: absolute; top: 12px; right: 12px;
-      width: 44px; height: 44px;
+      width: 64px; height: 56px;
       background: #fff;
       border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
       overflow: hidden;
+      padding: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
-    .card-logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .card-logo-wrap img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; }
     .card-name { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
     .card-meta { font-size: 0.85rem; opacity: 0.85; }
     .card-body { padding: 16px 20px; }
@@ -586,6 +588,9 @@
           <div id="qr-canvas-wrap" onclick="showQRFullscreen()" title="Cliquer pour agrandir">
             <canvas id="qr-canvas"></canvas>
             <div class="qr-hint">Appuyer pour agrandir</div>
+          </div>
+          <div id="qr-photo-warning" style="display:none; font-size:0.78rem; color:#b45309; background:#fef3c7; border-radius:8px; padding:8px 12px; margin-bottom:8px; max-width:320px; margin-left:auto; margin-right:auto;">
+            ℹ️ La photo a été retirée du QR code (trop de données). Le contact sera ajouté avec toutes vos coordonnées, mais sans photo. Utilisez le lien ci-dessous pour partager la carte avec photo.
           </div>
           <div class="action-btns">
             <button class="btn-action btn-green" onclick="showQRFullscreen()">🔍 Afficher le QR en grand</button>
@@ -925,6 +930,14 @@ function buildShareURL() {
 // ── QR CODE ───────────────────────────────────────────────────────────────────
 function generateQR() {
   const vcf = buildVCardForQR();
+  // Afficher un avertissement si la photo a été retirée du vCard
+  const warn = document.getElementById('qr-photo-warning');
+  if (warn) {
+    const fullVcf = buildVCardForQR._hasPhoto === undefined ? vcf : vcf;
+    const wouldHavePhoto = !!cardData.photoQR;
+    const photoWasRemoved = wouldHavePhoto && !vcf.includes('PHOTO');
+    warn.style.display = photoWasRemoved ? 'block' : 'none';
+  }
   drawQROnCanvas(vcf, document.getElementById('qr-canvas'), 200, cardData.colorPrimary);
 }
 
@@ -975,7 +988,7 @@ function showQRFullscreen() {
   const fs = document.getElementById('qr-fullscreen');
   const canvas = document.getElementById('qr-fullscreen-canvas');
   const fsSize = Math.min(window.innerWidth - 60, window.innerHeight - 120, 380);
-  drawQROnCanvas(buildQRURL(), canvas, fsSize, cardData.colorPrimary);
+  drawQROnCanvas(buildVCardForQR(), canvas, fsSize, cardData.colorPrimary);
   document.getElementById('qr-fullscreen-name').textContent =
     [cardData.prenom, cardData.nom].filter(Boolean).join(' ') || 'Ma carte';
   fs.classList.add('show');
@@ -1005,7 +1018,7 @@ function downloadQR() {
 
   // QR dans un canvas temporaire puis centré
   const qrCanvas = document.createElement('canvas');
-  drawQROnCanvas(buildQRURL(), qrCanvas, qrSize, cardData.colorPrimary);
+  drawQROnCanvas(buildVCardForQR(), qrCanvas, qrSize, cardData.colorPrimary);
 
   // Centrer le QR horizontalement
   const qrX = Math.round((totalW - qrCanvas.width) / 2);
@@ -1154,12 +1167,14 @@ function initViewMode() {
   try {
     const data = decodeCard(hash.slice(6));
     window._viewData = data;
-    // Masquer le header (bouton import non pertinent pour le destinataire)
-    document.getElementById('app-header').style.display = 'none';
-    document.getElementById('create-mode').style.display = 'none';
-    document.getElementById('view-mode').style.display = 'block';
-    // La carte ne montre PAS la mention créatrice dans le HTML de la carte elle-même
-    // (elle est affichée une seule fois via .view-credit en dessous du bouton)
+    // Masquer entièrement le mode création et le header
+    const header = document.getElementById('app-header');
+    const createMode = document.getElementById('create-mode');
+    const viewMode = document.getElementById('view-mode');
+    if (header) { header.style.display = 'none'; header.style.visibility = 'hidden'; }
+    if (createMode) { createMode.style.display = 'none'; createMode.style.visibility = 'hidden'; }
+    if (viewMode) { viewMode.style.display = 'block'; viewMode.style.visibility = 'visible'; }
+    // Carte sans footer (mention créatrice affichée une seule fois via .view-credit)
     document.getElementById('view-card').innerHTML = renderCardHTMLNoFooter(data);
     document.title = [data.prenom, data.nom].filter(Boolean).join(' ') + ' — QR-Contact';
     return true;
