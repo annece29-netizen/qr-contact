@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR-Contact — Carte de visite numérique</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#6c63ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="QR-Contact" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #6c63ff;
+      --accent: #ff6584;
+      --bg: #f7f7fb;
+      --card-bg: #fff;
+      --text: #222;
+      --text-muted: #777;
+      --radius: 16px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: var(--primary);
+      color: #fff;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .app-header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
+    .app-header .subtitle { font-size: 0.8rem; opacity: 0.8; }
+    .btn-import-header {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-import-header:hover { background: rgba(255,255,255,0.28); }
+
+    /* ── LAYOUT ── */
+    .app-body {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 800px) {
+      .app-body { grid-template-columns: 1fr; }
+      .preview-col { order: -1; }
+    }
+
+    /* ── STEPPER ── */
+    .stepper {
+      display: flex;
+      gap: 0;
+      margin-bottom: 28px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #e8e8f0;
+    }
+    .step-btn {
+      flex: 1;
+      padding: 10px 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-align: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+    .step-btn.active { background: var(--primary); color: #fff; }
+    .step-btn.done { background: #d4d0ff; color: var(--primary); }
+
+    /* ── FORM CARD ── */
+    .form-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+    .form-card h2 { font-size: 1.1rem; margin-bottom: 20px; color: var(--primary); }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 5px; color: var(--text-muted); }
+    .field input[type=text],
+    .field input[type=email],
+    .field input[type=tel],
+    .field input[type=url] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      background: #fafafa;
+    }
+    .field input:focus { outline: none; border-color: var(--primary); background: #fff; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── IMAGE UPLOAD ── */
+    .img-upload-area {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px;
+      border: 2px dashed #ddd;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .img-upload-area:hover { border-color: var(--primary); }
+    .img-thumb {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eee;
+      display: flex; align-items: center; justify-content: center;
+      color: #aaa; font-size: 1.5rem;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .img-thumb.logo { border-radius: 8px; }
+    .img-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+    .img-thumb.logo img { object-fit: contain; background: #fff; }
+    .img-upload-label { font-size: 0.85rem; color: var(--text-muted); }
+    .img-upload-label strong { display: block; color: var(--text); margin-bottom: 2px; }
+    input[type=file] { display: none; }
+
+    /* ── DOCS LIST ── */
+    .docs-list { margin-top: 8px; }
+    .doc-item {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .doc-item input { font-size: 0.85rem; padding: 8px 10px; }
+    .btn-remove {
+      background: #fee; border: none; color: #c00;
+      border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 1rem;
+    }
+    .btn-add-doc {
+      background: none; border: 1.5px dashed #bbb;
+      color: var(--text-muted); border-radius: 8px;
+      padding: 8px 16px; cursor: pointer; font-size: 0.85rem;
+      margin-top: 4px;
+    }
+    .btn-add-doc:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ── COULEURS ── */
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .color-row label { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); width: 140px; flex-shrink: 0; }
+    .color-row input[type=color] {
+      width: 44px; height: 44px;
+      border: 2px solid #ddd; border-radius: 8px;
+      padding: 2px; cursor: pointer;
+    }
+    .color-hex {
+      width: 100px;
+      padding: 8px 10px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: monospace;
+    }
+
+    /* ── NAVIGATION BUTTONS ── */
+    .form-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 24px;
+      gap: 12px;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-secondary {
+      background: #f0f0f8;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background: #e8e8ff; }
+
+    /* ── PREVIEW CARD ── */
+    .preview-col { position: sticky; top: 24px; }
+    .preview-title { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-preview {
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      background: #fff;
+    }
+    .card-header {
+      padding: 24px 20px 20px;
+      background: var(--primary);
+      color: #fff;
+      text-align: center;
+      position: relative;
+    }
+    .card-avatar {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      background: rgba(255,255,255,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; font-weight: 700;
+      overflow: hidden;
+      border: 3px solid rgba(255,255,255,0.5);
+    }
+    .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .card-logo-wrap {
+      position: absolute; top: 12px; right: 12px;
+      width: 44px; height: 44px;
+      background: #fff;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .card-logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .card-name { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+    .card-meta { font-size: 0.85rem; opacity: 0.85; }
+    .card-body { padding: 16px 20px; }
+    .card-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.88rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .card-line:last-child { border-bottom: none; }
+    .card-line .icon { width: 28px; text-align: center; font-size: 1rem; color: var(--primary); flex-shrink: 0; }
+    .card-line a { color: inherit; text-decoration: none; }
+    .card-footer {
+      padding: 10px 16px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: #aaa;
+      border-top: 1px solid #f0f0f0;
+    }
+    .card-footer a { color: var(--primary); text-decoration: none; }
+
+    /* ── ÉTAPE 5 — RÉSULTAT ── */
+    .result-section { text-align: center; }
+    .result-section h2 { font-size: 1.3rem; margin-bottom: 8px; color: var(--primary); }
+    .result-section p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; }
+    #qr-canvas-wrap {
+      display: inline-block;
+      padding: 16px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+    #qr-canvas-wrap canvas { display: block; }
+    .qr-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; }
+    .action-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+    .btn-action {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-green { background: #22c55e; color: #fff; }
+    .btn-green:hover { background: #16a34a; }
+    .btn-blue { background: #3b82f6; color: #fff; }
+    .btn-blue:hover { background: #2563eb; }
+    .btn-outline { background: #fff; color: var(--primary); border: 2px solid var(--primary); }
+    .btn-outline:hover { background: #f0f0ff; }
+    .btn-gray { background: #f3f3f3; color: var(--text); border: 1.5px solid #ddd; }
+    .btn-gray:hover { background: #e8e8e8; }
+
+    /* ── FULLSCREEN QR ── */
+    #qr-fullscreen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+    #qr-fullscreen.show { display: flex; }
+    #qr-fullscreen canvas { border-radius: 12px; }
+    #qr-fullscreen-name { color: #fff; font-size: 1.1rem; font-weight: 600; }
+    #qr-fullscreen-close {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(255,255,255,0.15);
+      border: none; color: #fff; width: 40px; height: 40px;
+      border-radius: 50%; font-size: 1.3rem; cursor: pointer;
+    }
+
+    /* ── MODE LECTURE ── */
+    #view-mode {
+      display: none;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    #view-mode .card-preview { box-shadow: var(--shadow); }
+    .btn-add-contact {
+      width: 100%;
+      padding: 16px;
+      background: #22c55e;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-add-contact:hover { background: #16a34a; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #222; color: #fff;
+      padding: 12px 24px; border-radius: 10px;
+      font-size: 0.9rem; transition: transform 0.3s;
+      z-index: 999; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div>
+    <h1>QR-Contact</h1>
+    <div class="subtitle">Carte de visite numérique gratuite</div>
+  </div>
+  <button class="btn-import-header" onclick="triggerImport()">📂 Importer une carte (.json)</button>
+  <input type="file" id="import-file" accept=".json" onchange="importJSON(event)" />
+</header>
+
+<!-- MODE LECTURE (affiché si #card= dans l'URL) -->
+<div id="view-mode">
+  <div id="view-card"></div>
+  <button class="btn-add-contact" onclick="downloadVCF()">
+    ➕ Ajouter à mes contacts
+  </button>
+  <div class="card-footer" style="text-align:center; margin-top:12px; font-size:0.75rem; color:#aaa;">
+    Carte créée avec <strong>QR-Contact</strong> — Application gratuite d'<a href="https://www.linkedin.com/in/annececileledain/" target="_blank" rel="noopener">Anne-Cécile Le Dain</a>
+  </div>
+</div>
+
+<!-- MODE CRÉATION -->
+<div id="create-mode">
+  <div class="app-body">
+    <!-- COLONNE FORMULAIRE -->
+    <div class="form-col">
+      <!-- STEPPER -->
+      <div class="stepper">
+        <button class="step-btn active" id="step-btn-1" onclick="goToStep(1)">1. Identité</button>
+        <button class="step-btn" id="step-btn-2" onclick="goToStep(2)">2. Contact</button>
+        <button class="step-btn" id="step-btn-3" onclick="goToStep(3)">3. Réseaux</button>
+        <button class="step-btn" id="step-btn-4" onclick="goToStep(4)">4. Couleurs</button>
+        <button class="step-btn" id="step-btn-5" onclick="goToStep(5)">5. Terminé</button>
+      </div>
+
+      <!-- ÉTAPE 1 -->
+      <div class="form-card" id="step-1">
+        <h2>👤 Identité</h2>
+        <div class="field-row">
+          <div class="field">
+            <label>Prénom</label>
+            <input type="text" id="f-prenom" placeholder="Anne-Cécile" oninput="syncField('prenom', this.value)" />
+          </div>
+          <div class="field">
+            <label>Nom</label>
+            <input type="text" id="f-nom" placeholder="Le Dain" oninput="syncField('nom', this.value)" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Titre / Métier</label>
+          <input type="text" id="f-titre" placeholder="Conseil & Stratégie IA pour TPE-PME" oninput="syncField('titre', this.value)" />
+        </div>
+        <div class="field">
+          <label>Entreprise</label>
+          <input type="text" id="f-entreprise" placeholder="KléIA" oninput="syncField('entreprise', this.value)" />
+        </div>
+
+        <!-- Photo de profil -->
+        <div class="field">
+          <label>Photo de profil</label>
+          <div class="img-upload-area" onclick="document.getElementById('input-photo').click()">
+            <div class="img-thumb" id="thumb-photo"><span>👤</span></div>
+            <div class="img-upload-label">
+              <strong>Choisir une photo</strong>
+              Recommandé : carré, visage centré
+            </div>
+          </div>
+          <input type="file" id="input-photo" accept="image/*" onchange="handleImage(event, 'photo', 'thumb-photo', 300, 0.6, false)" />
+        </div>
+
+        <!-- Logo -->
+        <div class="field">
+          <label>Logo de l'entreprise (optionnel)</label>
+          <div class="img-upload-area" onclick="document.getElementById('input-logo').click()">
+            <div class="img-thumb logo" id="thumb-logo"><span>🏢</span></div>
+            <div class="img-upload-label">
+              <strong>Choisir un logo</strong>
+              PNG avec fond transparent idéal
+            </div>
+          </div>
+          <input type="file" id="input-logo" accept="image/*" onchange="handleImage(event, 'logo', 'thumb-logo', 240, 0.75, true)" />
+        </div>
+
+        <div class="form-nav">
+          <div></div>
+          <button class="btn-primary" onclick="goToStep(2)">Suivant →</button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 -->
+      <div class="form-card" id="step-2" style="display:none">
+        <h2>📞 Contact</h2>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="anne@exemple.com" oninput="syncField('email', this.value)" />
+        </div>
+        <div class="field">
+          <label>Téléphone</label>
+          <input type="tel" id="f-tel" placeholder="06 XX XX XX XX" oninput="syncField('tel', this.value)" />
+        </div>
+        <div class="field">
+          <label>Ville / Adresse</label>
+          <input type="text" id="f-adresse" placeholder="Rennes, France" oninput="syncField('adresse', this.value)" />
+        </div>
+        <div class="form-nav">
+          <button class="btn-secondary" onclick="goToStep(1)">← Précédent</button>
+          <button class="btn-primary" onclick="goToStep(3)">Suivant →</button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 3 -->
+      <div class="form-card" id="step-3" style="display:none">
+        <h2>🔗 Liens & réseaux</h2>
+        <div class="field">
+          <label>Site web / Portfolio</label>
+          <input type="url" id="f-web" placeholder="https://monsite.fr" oninput="syncField('web', this.value)" />
+        </div>
+        <div class="field">
+          <label>LinkedIn</label>
+          <input type="url" id="f-linkedin" placeholder="https://linkedin.com/in/..." oninput="syncField('linkedin', this.value)" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Instagram</label>
+            <input type="text" id="f-instagram" placeholder="@moncompte" oninput="syncField('instagram', this.value)" />
+          </div>
+          <div class="field">
+            <label>Facebook</label>
+            <input type="url" id="f-facebook" placeholder="https://facebook.com/..." oninput="syncField('facebook', this.value)" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>X / Twitter</label>
+            <input type="text" id="f-twitter" placeholder="@moncompte" oninput="syncField('twitter', this.value)" />
+          </div>
+          <div class="field">
+            <label>Substack</label>
+            <input type="url" id="f-substack" placeholder="https://....substack.com" oninput="syncField('substack', this.value)" />
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:8px">
+          <label>Documents (plaquette, CV, brochure...)</label>
+          <div class="docs-list" id="docs-list"></div>
+          <button class="btn-add-doc" onclick="addDoc()">+ Ajouter un document</button>
+        </div>
+
+        <div class="form-nav">
+          <button class="btn-secondary" onclick="goToStep(2)">← Précédent</button>
+          <button class="btn-primary" onclick="goToStep(4)">Suivant →</button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 4 -->
+      <div class="form-card" id="step-4" style="display:none">
+        <h2>🎨 Couleurs</h2>
+        <p style="color:var(--text-muted);font-size:0.87rem;margin-bottom:20px">
+          Choisissez les couleurs de votre charte graphique. Le texte sera automatiquement lisible.
+        </p>
+        <div class="color-row">
+          <label>Couleur principale<br><span style="font-weight:400;font-size:0.75rem">(fond de l'en-tête)</span></label>
+          <input type="color" id="color-primary" value="#6c63ff" oninput="syncColor('colorPrimary', this.value)" />
+          <input class="color-hex" type="text" id="hex-primary" value="#6c63ff" oninput="syncHex('colorPrimary', 'color-primary', this.value)" maxlength="7" />
+        </div>
+        <div class="color-row">
+          <label>Couleur accent<br><span style="font-weight:400;font-size:0.75rem">(icônes & bordures)</span></label>
+          <input type="color" id="color-accent" value="#ff6584" oninput="syncColor('colorAccent', this.value)" />
+          <input class="color-hex" type="text" id="hex-accent" value="#ff6584" oninput="syncHex('colorAccent', 'color-accent', this.value)" maxlength="7" />
+        </div>
+        <div class="form-nav">
+          <button class="btn-secondary" onclick="goToStep(3)">← Précédent</button>
+          <button class="btn-primary" onclick="goToStep(5)">Générer ma carte →</button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 5 -->
+      <div class="form-card" id="step-5" style="display:none">
+        <div class="result-section">
+          <h2>🎉 Votre carte est prête !</h2>
+          <p>Montrez ce QR code — on le scanne et reçoit vos coordonnées complètes.</p>
+          <div id="qr-canvas-wrap" onclick="showQRFullscreen()" title="Cliquer pour agrandir">
+            <canvas id="qr-canvas"></canvas>
+            <div class="qr-hint">Appuyer pour agrandir</div>
+          </div>
+          <div class="action-btns">
+            <button class="btn-action btn-green" onclick="showQRFullscreen()">🔍 Afficher le QR en grand</button>
+            <button class="btn-action btn-blue" onclick="downloadQR()">⬇️ Télécharger le QR (image)</button>
+            <button class="btn-action btn-outline" onclick="copyCardLink()">🔗 Copier le lien de ma carte</button>
+            <button class="btn-action btn-gray" onclick="exportJSON()">💾 Télécharger ma carte (.json)</button>
+            <button class="btn-action btn-gray" onclick="goToStep(1)" style="font-weight:400">✏️ Modifier ma carte</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLONNE APERÇU -->
+    <div class="preview-col">
+      <div class="preview-title">Aperçu en direct</div>
+      <div id="preview-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FULLSCREEN QR -->
+<div id="qr-fullscreen">
+  <button id="qr-fullscreen-close" onclick="hideQRFullscreen()">✕</button>
+  <canvas id="qr-fullscreen-canvas"></canvas>
+  <div id="qr-fullscreen-name"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ── DONNÉES ──────────────────────────────────────────────────────────────────
+let cardData = {
+  prenom: '', nom: '', titre: '', entreprise: '',
+  photo: '', logo: '',
+  email: '', tel: '', adresse: '',
+  web: '', linkedin: '', instagram: '', facebook: '', twitter: '', substack: '',
+  docs: [],
+  colorPrimary: '#6c63ff', colorAccent: '#ff6584'
+};
+
+let currentStep = 1;
+
+// ── ICÔNE PWA ─────────────────────────────────────────────────────────────────
+(function generatePWAIcon() {
+  const c = document.createElement('canvas');
+  c.width = 192; c.height = 192;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#6c63ff';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, 192, 192, 36);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 100px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('QR', 96, 96);
+  const url = c.toDataURL('image/png');
+  document.querySelectorAll('link[rel="apple-touch-icon"]').forEach(l => l.href = url);
+  const link = document.createElement('link');
+  link.rel = 'apple-touch-icon';
+  link.href = url;
+  document.head.appendChild(link);
+})();
+
+// ── CHAMPS ───────────────────────────────────────────────────────────────────
+function syncField(key, value) {
+  cardData[key] = value;
+  renderPreview();
+}
+
+function syncColor(key, value) {
+  cardData[key] = value;
+  if (key === 'colorPrimary') document.getElementById('hex-primary').value = value;
+  if (key === 'colorAccent') document.getElementById('hex-accent').value = value;
+  renderPreview();
+}
+
+function syncHex(key, colorId, value) {
+  if (/^#[0-9a-fA-F]{6}$/.test(value)) {
+    cardData[key] = value;
+    document.getElementById(colorId).value = value;
+    renderPreview();
+  }
+}
+
+// ── IMAGES ───────────────────────────────────────────────────────────────────
+function handleImage(event, field, thumbId, maxSize, quality, isLogo) {
+  const file = event.target.files[0];
+  if (!file) return;
+  compressImage(file, maxSize, quality, isLogo, (b64) => {
+    cardData[field] = b64;
+    const thumb = document.getElementById(thumbId);
+    thumb.innerHTML = `<img src="${b64}" />`;
+    renderPreview();
+  });
+}
+
+function compressImage(file, maxPx, quality, isLogo, callback) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > maxPx || h > maxPx) {
+        if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      if (isLogo) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); }
+      ctx.drawImage(img, 0, 0, w, h);
+      callback(c.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── DOCUMENTS ─────────────────────────────────────────────────────────────────
+function addDoc() {
+  cardData.docs.push({ titre: '', url: '' });
+  renderDocsList();
+}
+function removeDoc(i) {
+  cardData.docs.splice(i, 1);
+  renderDocsList();
+  renderPreview();
+}
+function renderDocsList() {
+  const list = document.getElementById('docs-list');
+  list.innerHTML = cardData.docs.map((d, i) => `
+    <div class="doc-item">
+      <input class="field input" type="text" placeholder="Titre (ex: Plaquette)"
+        value="${esc(d.titre)}"
+        oninput="cardData.docs[${i}].titre=this.value;renderPreview()" />
+      <input class="field input" type="url" placeholder="https://..."
+        value="${esc(d.url)}"
+        oninput="cardData.docs[${i}].url=this.value;renderPreview()" />
+      <button class="btn-remove" onclick="removeDoc(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+// ── ÉTAPES ───────────────────────────────────────────────────────────────────
+function goToStep(n) {
+  document.getElementById(`step-${currentStep}`).style.display = 'none';
+  document.getElementById(`step-${n}`).style.display = 'block';
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.getElementById(`step-btn-${i}`);
+    btn.classList.remove('active', 'done');
+    if (i < n) btn.classList.add('done');
+    else if (i === n) btn.classList.add('active');
+  }
+  currentStep = n;
+  if (n === 5) generateQR();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── RENDU CARTE ───────────────────────────────────────────────────────────────
+function wcagTextColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const lum = (c) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const L = 0.2126 * lum(r) + 0.7152 * lum(g) + 0.0722 * lum(b);
+  return L > 0.179 ? '#000000' : '#ffffff';
+}
+
+function renderCardHTML(data) {
+  const textColor = wcagTextColor(data.colorPrimary || '#6c63ff');
+  const accentColor = data.colorAccent || '#ff6584';
+
+  const avatarHTML = data.photo
+    ? `<img src="${data.photo}" alt="Photo" />`
+    : `<span>${(data.prenom || '?')[0]}${(data.nom || '')[0] || ''}</span>`;
+
+  const logoHTML = data.logo
+    ? `<div class="card-logo-wrap"><img src="${data.logo}" alt="Logo" /></div>` : '';
+
+  const lines = [];
+  if (data.email) lines.push(`<a class="card-line" href="mailto:${esc(data.email)}"><span class="icon" style="color:${accentColor}">✉️</span><span>${esc(data.email)}</span></a>`);
+  if (data.tel) lines.push(`<a class="card-line" href="tel:${esc(data.tel)}"><span class="icon" style="color:${accentColor}">📞</span><span>${esc(data.tel)}</span></a>`);
+  if (data.adresse) lines.push(`<div class="card-line"><span class="icon" style="color:${accentColor}">📍</span><span>${esc(data.adresse)}</span></div>`);
+  if (data.web) lines.push(`<a class="card-line" href="${esc(data.web)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">🌐</span><span>Site web</span></a>`);
+  if (data.linkedin) lines.push(`<a class="card-line" href="${esc(data.linkedin)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">in</span><span>Profil LinkedIn</span></a>`);
+  if (data.instagram) lines.push(`<a class="card-line" href="https://instagram.com/${esc(data.instagram.replace('@',''))}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">📷</span><span>Instagram ${esc(data.instagram)}</span></a>`);
+  if (data.facebook) lines.push(`<a class="card-line" href="${esc(data.facebook)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">f</span><span>Facebook</span></a>`);
+  if (data.twitter) lines.push(`<a class="card-line" href="https://x.com/${esc(data.twitter.replace('@',''))}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">𝕏</span><span>X / Twitter ${esc(data.twitter)}</span></a>`);
+  if (data.substack) lines.push(`<a class="card-line" href="${esc(data.substack)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">📝</span><span>Articles Substack</span></a>`);
+  data.docs.forEach(d => {
+    if (d.url) lines.push(`<a class="card-line" href="${esc(d.url)}" target="_blank" rel="noopener"><span class="icon" style="color:${accentColor}">📄</span><span>${esc(d.titre || 'Document')}</span></a>`);
+  });
+
+  return `
+    <div class="card-preview">
+      <div class="card-header" style="background:${data.colorPrimary};color:${textColor}">
+        ${logoHTML}
+        <div class="card-avatar">${avatarHTML}</div>
+        <div class="card-name">${esc(data.prenom)} ${esc(data.nom)}</div>
+        <div class="card-meta">${esc(data.titre)}${data.titre && data.entreprise ? ' · ' : ''}${esc(data.entreprise)}</div>
+      </div>
+      <div class="card-body">${lines.join('')}</div>
+      <div class="card-footer">
+        Carte créée avec <strong>QR-Contact</strong> — Application gratuite d'<a href="https://www.linkedin.com/in/annececileledain/" target="_blank" rel="noopener">Anne-Cécile Le Dain</a>
+      </div>
+    </div>
+  `;
+}
+
+function renderPreview() {
+  document.getElementById('preview-container').innerHTML = renderCardHTML(cardData);
+}
+
+// ── ENCODAGE URL ──────────────────────────────────────────────────────────────
+function encodeCard(data) {
+  return btoa(encodeURIComponent(JSON.stringify(data)));
+}
+function decodeCard(str) {
+  return JSON.parse(decodeURIComponent(atob(str)));
+}
+
+function buildCardURL(includePhoto) {
+  const d = includePhoto ? cardData : { ...cardData, photo: '', logo: '' };
+  const encoded = encodeCard(d);
+  const base = window.location.origin + window.location.pathname;
+  return `${base}#card=${encoded}`;
+}
+
+// ── QR CODE ───────────────────────────────────────────────────────────────────
+function generateQR() {
+  const url = buildCardURL(false); // sans photo pour que le QR reste lisible
+  drawQROnCanvas(url, document.getElementById('qr-canvas'), 200, cardData.colorPrimary, cardData.colorAccent);
+}
+
+function drawQROnCanvas(text, canvas, size, colorDark, colorLight) {
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    const modules = qr.getModuleCount();
+    const scale = Math.floor(size / modules);
+    const actualSize = modules * scale;
+    canvas.width = actualSize;
+    canvas.height = actualSize;
+    const ctx = canvas.getContext('2d');
+    // fond blanc
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, actualSize, actualSize);
+    // modules noirs d'abord
+    ctx.fillStyle = '#000000';
+    for (let r = 0; r < modules; r++) {
+      for (let c = 0; c < modules; c++) {
+        if (qr.isDark(r, c)) {
+          ctx.fillRect(c * scale, r * scale, scale, scale);
+        }
+      }
+    }
+    // coloration pixel par pixel
+    colorizeQRCanvas(canvas, colorDark || '#000000');
+  } catch (e) {
+    // si le texte est trop long, on essaie avec correction L
+    try {
+      const qr = qrcode(0, 'L');
+      qr.addData(text);
+      qr.make();
+      const modules = qr.getModuleCount();
+      const scale = Math.floor(size / modules);
+      const actualSize = modules * scale;
+      canvas.width = actualSize;
+      canvas.height = actualSize;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, actualSize, actualSize);
+      ctx.fillStyle = '#000000';
+      for (let r = 0; r < modules; r++) {
+        for (let c = 0; c < modules; c++) {
+          if (qr.isDark(r, c)) ctx.fillRect(c * scale, r * scale, scale, scale);
+        }
+      }
+      colorizeQRCanvas(canvas, colorDark || '#000000');
+    } catch(e2) { console.error('QR trop long', e2); }
+  }
+}
+
+function colorizeQRCanvas(canvas, hexColor) {
+  if (!hexColor || hexColor === '#000000') return;
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = imageData.data;
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i] < 128) { // pixel sombre = module QR
+      d[i] = r; d[i+1] = g; d[i+2] = b;
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// ── FULLSCREEN QR ─────────────────────────────────────────────────────────────
+function showQRFullscreen() {
+  const fs = document.getElementById('qr-fullscreen');
+  const canvas = document.getElementById('qr-fullscreen-canvas');
+  const url = buildCardURL(false);
+  drawQROnCanvas(url, canvas, Math.min(window.innerWidth - 60, 380), cardData.colorPrimary, cardData.colorAccent);
+  document.getElementById('qr-fullscreen-name').textContent =
+    [cardData.prenom, cardData.nom].filter(Boolean).join(' ') || 'Ma carte';
+  fs.classList.add('show');
+}
+function hideQRFullscreen() {
+  document.getElementById('qr-fullscreen').classList.remove('show');
+}
+document.getElementById('qr-fullscreen').addEventListener('click', function(e) {
+  if (e.target === this) hideQRFullscreen();
+});
+
+// ── TÉLÉCHARGEMENT QR PERSONNALISÉ ────────────────────────────────────────────
+function downloadQR() {
+  const qrSize = 280;
+  const padding = 24;
+  const textHeight = 56;
+  const totalH = qrSize + padding * 2 + textHeight;
+  const totalW = qrSize + padding * 2;
+
+  const c = document.createElement('canvas');
+  c.width = totalW; c.height = totalH;
+  const ctx = c.getContext('2d');
+
+  // fond blanc
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, totalW, totalH);
+
+  // QR dans un canvas temporaire
+  const qrCanvas = document.createElement('canvas');
+  const url = buildCardURL(false);
+  drawQROnCanvas(url, qrCanvas, qrSize, cardData.colorPrimary, cardData.colorAccent);
+
+  ctx.drawImage(qrCanvas, padding, padding);
+
+  // texte
+  const name = [cardData.prenom, cardData.nom].filter(Boolean).join(' ') || 'Ma carte';
+  const sub = cardData.entreprise || cardData.titre || '';
+  ctx.fillStyle = '#222';
+  ctx.font = 'bold 18px Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(name, totalW / 2, qrSize + padding * 2 + 18);
+  if (sub) {
+    ctx.fillStyle = '#777';
+    ctx.font = '13px Segoe UI, sans-serif';
+    ctx.fillText(sub, totalW / 2, qrSize + padding * 2 + 38);
+  }
+
+  const a = document.createElement('a');
+  a.href = c.toDataURL('image/png');
+  a.download = `qr-contact-${(name).replace(/\s+/g, '-').toLowerCase()}.png`;
+  a.click();
+  showToast('QR code téléchargé !');
+}
+
+// ── COPIER LIEN ───────────────────────────────────────────────────────────────
+function copyCardLink() {
+  const url = buildCardURL(true); // avec photo
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('Lien copié dans le presse-papiers !');
+  }).catch(() => {
+    prompt('Copiez ce lien :', url);
+  });
+}
+
+// ── EXPORT / IMPORT JSON ──────────────────────────────────────────────────────
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(cardData, null, 2)], { type: 'application/json' });
+  const name = [cardData.prenom, cardData.nom].filter(Boolean).join('-').toLowerCase() || 'ma-carte';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `qr-contact-${name}.json`;
+  a.click();
+  showToast('Carte sauvegardée !');
+}
+
+function triggerImport() {
+  document.getElementById('import-file').click();
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      cardData = { ...cardData, ...data };
+      fillFormFromData();
+      renderPreview();
+      goToStep(5);
+      generateQR();
+      showToast('Carte importée !');
+    } catch { showToast('Fichier invalide.'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function fillFormFromData() {
+  const fields = ['prenom','nom','titre','entreprise','email','tel','adresse','web','linkedin','instagram','facebook','twitter','substack'];
+  fields.forEach(k => {
+    const el = document.getElementById(`f-${k}`);
+    if (el) el.value = cardData[k] || '';
+  });
+  if (cardData.photo) {
+    document.getElementById('thumb-photo').innerHTML = `<img src="${cardData.photo}" />`;
+  }
+  if (cardData.logo) {
+    document.getElementById('thumb-logo').innerHTML = `<img src="${cardData.logo}" />`;
+  }
+  if (cardData.colorPrimary) {
+    document.getElementById('color-primary').value = cardData.colorPrimary;
+    document.getElementById('hex-primary').value = cardData.colorPrimary;
+  }
+  if (cardData.colorAccent) {
+    document.getElementById('color-accent').value = cardData.colorAccent;
+    document.getElementById('hex-accent').value = cardData.colorAccent;
+  }
+  renderDocsList();
+}
+
+// ── VCARDS ────────────────────────────────────────────────────────────────────
+function generateVCF(data) {
+  const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
+  const fullName = [data.prenom, data.nom].filter(Boolean).join(' ');
+  lines.push(`FN:${fullName}`);
+  lines.push(`N:${data.nom || ''};${data.prenom || ''};;;`);
+  if (data.titre) lines.push(`TITLE:${data.titre}`);
+  if (data.entreprise) lines.push(`ORG:${data.entreprise}`);
+  if (data.email) lines.push(`EMAIL;TYPE=INTERNET:${data.email}`);
+  if (data.tel) lines.push(`TEL;TYPE=CELL:${data.tel}`);
+  if (data.adresse) lines.push(`ADR;TYPE=WORK:;;${data.adresse};;;;`);
+  if (data.web) lines.push(`URL;TYPE=Work:${data.web}`);
+  if (data.linkedin) lines.push(`URL;TYPE=LinkedIn:${data.linkedin}`);
+  if (data.instagram) {
+    const h = data.instagram.startsWith('@') ? `https://instagram.com/${data.instagram.slice(1)}` : data.instagram;
+    lines.push(`URL;TYPE=Instagram:${h}`);
+  }
+  if (data.facebook) lines.push(`URL;TYPE=Facebook:${data.facebook}`);
+  if (data.twitter) {
+    const h = data.twitter.startsWith('@') ? `https://x.com/${data.twitter.slice(1)}` : data.twitter;
+    lines.push(`URL;TYPE=Twitter:${h}`);
+  }
+  if (data.substack) lines.push(`URL;TYPE=Substack:${data.substack}`);
+  data.docs && data.docs.forEach(d => {
+    if (d.url) lines.push(`URL;TYPE=${d.titre || 'Document'}:${d.url}`);
+  });
+  // Photo en base64 dans le vCard (format 3.0, supporté iOS/Android)
+  if (data.photo) {
+    const b64 = data.photo.split(',')[1];
+    if (b64) {
+      lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${b64}`);
+    }
+  }
+  lines.push('END:VCARD');
+  return lines.join('\r\n');
+}
+
+function downloadVCF() {
+  // En mode lecture : utiliser viewData, sinon cardData
+  const data = window._viewData || cardData;
+  const vcf = generateVCF(data);
+  const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
+  const name = [data.prenom, data.nom].filter(Boolean).join('-').toLowerCase() || 'contact';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}.vcf`;
+  a.click();
+}
+
+// ── MODE LECTURE ──────────────────────────────────────────────────────────────
+function initViewMode() {
+  const hash = window.location.hash;
+  if (!hash.startsWith('#card=')) return false;
+  try {
+    const data = decodeCard(hash.slice(6));
+    window._viewData = data;
+    document.getElementById('create-mode').style.display = 'none';
+    document.getElementById('view-mode').style.display = 'block';
+    document.getElementById('view-card').innerHTML = renderCardHTML(data);
+    document.title = [data.prenom, data.nom].filter(Boolean).join(' ') + ' — QR-Contact';
+    return true;
+  } catch (e) {
+    console.error('Erreur décodage carte', e);
+    return false;
+  }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── UTILITAIRES ───────────────────────────────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+if (!initViewMode()) {
+  renderPreview();
+  renderDocsList();
+}
+</script>
+</body>
+</html>
