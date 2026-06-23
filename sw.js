@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qr-contact-v1';
+const CACHE_NAME = 'qr-contact-v2';
 
 const ASSETS = [
   './',
