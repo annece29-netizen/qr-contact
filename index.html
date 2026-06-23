@@ -278,7 +278,7 @@
       color: inherit;
     }
     .card-line:last-child { border-bottom: none; }
-    .card-line .icon { width: 28px; text-align: center; font-size: 1rem; color: var(--primary); flex-shrink: 0; }
+    .card-line .icon { width: 28px; text-align: center; font-size: 1rem; flex-shrink: 0; }
     .card-footer {
       padding: 10px 16px;
       text-align: center;
@@ -337,16 +337,16 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.92);
+      background: rgba(0,0,0,0.88);
       z-index: 1000;
       align-items: center;
       justify-content: center;
       flex-direction: column;
-      gap: 20px;
+      gap: 0;
     }
     #qr-fullscreen.show { display: flex; }
-    #qr-fullscreen canvas { border-radius: 12px; }
-    #qr-fullscreen-name { color: #fff; font-size: 1.1rem; font-weight: 600; }
+    #qr-fullscreen canvas { display: block; max-width: 90vw; max-height: 80vh; }
+    #qr-fullscreen-name { display: none; }
     #qr-fullscreen-close {
       position: absolute; top: 20px; right: 20px;
       background: rgba(255,255,255,0.15);
@@ -634,77 +634,75 @@ let cardData = {
 
 let currentStep = 1;
 
-// ── LOGO HEADER + ICÔNE PWA ──────────────────────────────────────────────────
-function drawQRLogo(canvas, size, bg, fg) {
+// ── LOGO APPLI : carte jaune sur fond noir (icône métier "carte de visite") ───
+function drawAppLogo(canvas, size) {
   canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext('2d');
-  const r = size * 0.22;
-  // fond arrondi
-  ctx.fillStyle = bg;
+  const s = size / 100;
+
+  // Fond noir arrondi
+  ctx.fillStyle = '#272030';
   ctx.beginPath();
-  ctx.roundRect(0, 0, size, size, r);
+  ctx.roundRect(0, 0, size, size, size * 0.18);
   ctx.fill();
-  // dessiner un mini QR stylisé
-  ctx.fillStyle = fg;
-  const u = size / 12;
-  const sq = (x, y, w, h) => ctx.fillRect(x*u, y*u, w*u, h*u);
-  // coin haut-gauche
-  sq(1,1,4,4); ctx.fillStyle = bg; sq(1.5,1.5,3,3); ctx.fillStyle = fg; sq(2,2,2,2);
-  // coin haut-droit
-  ctx.fillStyle = fg; sq(7,1,4,4); ctx.fillStyle = bg; sq(7.5,1.5,3,3); ctx.fillStyle = fg; sq(8,2,2,2);
-  // coin bas-gauche
-  ctx.fillStyle = fg; sq(1,7,4,4); ctx.fillStyle = bg; sq(1.5,7.5,3,3); ctx.fillStyle = fg; sq(2,8,2,2);
-  // pixels bas-droit
-  ctx.fillStyle = fg;
-  sq(7,7,1.5,1.5); sq(9,7,1.5,1.5); sq(7,9,1.5,1.5); sq(9,9,2.5,2.5);
+
+  // Carte de visite (rectangle arrondi jaune, tracé)
+  ctx.strokeStyle = '#ffec86';
+  ctx.lineWidth = 5.5 * s;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const cx = 18 * s, cy = 34 * s, cw = 64 * s, ch = 42 * s, cr = 7 * s;
+  ctx.beginPath();
+  ctx.moveTo(cx + cr, cy);
+  ctx.arcTo(cx + cw, cy,     cx + cw, cy + ch, cr);
+  ctx.arcTo(cx + cw, cy + ch, cx,     cy + ch, cr);
+  ctx.arcTo(cx,      cy + ch, cx,     cy,      cr);
+  ctx.arcTo(cx,      cy,     cx + cw, cy,      cr);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Cercle tête (avatar)
+  ctx.beginPath();
+  ctx.arc(36 * s, 50 * s, 7 * s, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Épaules
+  ctx.beginPath();
+  ctx.moveTo(27 * s, 68 * s);
+  ctx.quadraticCurveTo(27 * s, 59 * s, 36 * s, 59 * s);
+  ctx.quadraticCurveTo(45 * s, 59 * s, 45 * s, 68 * s);
+  ctx.stroke();
+
+  // Lignes de texte
+  ctx.lineWidth = 4.5 * s;
+  ctx.beginPath(); ctx.moveTo(53 * s, 48 * s); ctx.lineTo(73 * s, 48 * s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(53 * s, 58 * s); ctx.lineTo(66 * s, 58 * s); ctx.stroke();
 }
 
 (function initLogos() {
   // Logo dans le header
   const headerCanvas = document.getElementById('header-logo-canvas');
-  if (headerCanvas) drawQRLogo(headerCanvas, 36, 'rgba(255,255,255,0.18)', '#ffffff');
-  // Icône PWA (apple-touch-icon)
-  const pwaCanvas = document.createElement('canvas');
-  drawQRLogo(pwaCanvas, 192, '#6c63ff', '#ffffff');
-  const url = pwaCanvas.toDataURL('image/png');
-  const link = document.createElement('link');
-  link.rel = 'apple-touch-icon';
-  link.href = url;
-  document.head.appendChild(link);
-})();
+  if (headerCanvas) drawAppLogo(headerCanvas, 36);
 
-(function generatePWAIcon() {
-  const size = 192;
-  const c = document.createElement('canvas');
-  c.width = size; c.height = size;
-  const ctx = c.getContext('2d');
-  // fond violet arrondi
-  ctx.fillStyle = '#6c63ff';
-  ctx.beginPath();
-  ctx.roundRect(0, 0, size, size, size * 0.2);
-  ctx.fill();
-  // dessiner un QR code simplifié en blanc
-  const draw = (x, y, w, h, fill) => {
-    ctx.fillStyle = fill;
-    ctx.fillRect(x, y, w, h);
-  };
-  const u = size / 36; // unité
-  ctx.fillStyle = 'white';
-  // coin haut-gauche
-  ctx.strokeStyle = 'white'; ctx.lineWidth = u * 2;
-  const sq = (x, y, s) => { ctx.strokeRect(x*u, y*u, s*u, s*u); };
-  sq(5,5,11); draw(8*u,8*u,5*u,5*u,'white');
-  sq(20,5,11); draw(23*u,8*u,5*u,5*u,'white');
-  sq(5,20,11); draw(8*u,23*u,5*u,5*u,'white');
-  draw(20*u,20*u,3*u,3*u,'white');
-  draw(25*u,20*u,3*u,3*u,'white');
-  draw(20*u,25*u,3*u,3*u,'white');
-  draw(25*u,25*u,6*u,6*u,'white');
-  const url = c.toDataURL('image/png');
-  const link = document.createElement('link');
-  link.rel = 'apple-touch-icon';
-  link.href = url;
-  document.head.appendChild(link);
+  // Icône PWA (favicon + apple-touch-icon)
+  const pwa192 = document.createElement('canvas');
+  drawAppLogo(pwa192, 192);
+  const url192 = pwa192.toDataURL('image/png');
+
+  const pwa32 = document.createElement('canvas');
+  drawAppLogo(pwa32, 32);
+  const url32 = pwa32.toDataURL('image/png');
+
+  // Remplacer le favicon existant
+  let favicon = document.querySelector("link[rel='icon']");
+  if (!favicon) { favicon = document.createElement('link'); favicon.rel = 'icon'; document.head.appendChild(favicon); }
+  favicon.type = 'image/png';
+  favicon.href = url32;
+
+  // Apple touch icon
+  let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
+  if (!appleIcon) { appleIcon = document.createElement('link'); appleIcon.rel = 'apple-touch-icon'; document.head.appendChild(appleIcon); }
+  appleIcon.href = url192;
 })();
 
 // ── CHAMPS ───────────────────────────────────────────────────────────────────
@@ -983,14 +981,77 @@ function colorizeQRCanvas(canvas, hexColor) {
   ctx.putImageData(imageData, 0, 0);
 }
 
+// Construit un canvas QR stylisé : fond colorPrimary, QR blanc sur carré blanc,
+// bordure colorAccent, nom + entreprise en texte blanc en dessous.
+function buildStyledQRCanvas(qrSizePx) {
+  const padding = Math.round(qrSizePx * 0.12);
+  const labelH = 56;
+  const totalW = qrSizePx + padding * 2;
+  const totalH = qrSizePx + padding * 2 + labelH;
+
+  const out = document.createElement('canvas');
+  out.width = totalW;
+  out.height = totalH;
+  const ctx = out.getContext('2d');
+
+  // Fond couleur principale
+  ctx.fillStyle = cardData.colorPrimary || '#6c63ff';
+  ctx.fillRect(0, 0, totalW, totalH);
+
+  // Carré blanc pour le QR (avec marge intérieure blanche = zone calme)
+  const innerPad = Math.round(padding * 0.4);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(padding - innerPad, padding - innerPad,
+    qrSizePx + innerPad * 2, qrSizePx + innerPad * 2);
+
+  // QR foncé dans la zone blanche
+  const qrCanvas = document.createElement('canvas');
+  drawQROnCanvas(buildVCardForQR(), qrCanvas, qrSizePx, cardData.colorPrimary);
+  ctx.drawImage(qrCanvas, padding, padding, qrSizePx, qrSizePx);
+
+  // Bordure couleur accent
+  const accent = cardData.colorAccent || '#ff6584';
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = Math.max(3, Math.round(qrSizePx * 0.012));
+  ctx.strokeRect(padding - innerPad, padding - innerPad,
+    qrSizePx + innerPad * 2, qrSizePx + innerPad * 2);
+
+  // Texte nom + entreprise
+  const name = [cardData.prenom, cardData.nom].filter(Boolean).join(' ') || '';
+  const sub = cardData.entreprise || '';
+  const textColor = wcagTextColor(cardData.colorPrimary || '#6c63ff');
+  const textY = qrSizePx + padding * 2 - innerPad + 4;
+  ctx.textAlign = 'center';
+  if (name) {
+    ctx.fillStyle = textColor;
+    ctx.font = `bold ${Math.round(qrSizePx * 0.065)}px Segoe UI, Arial, sans-serif`;
+    ctx.fillText(name, totalW / 2, textY + Math.round(qrSizePx * 0.065));
+  }
+  if (sub) {
+    ctx.fillStyle = textColor;
+    ctx.globalAlpha = 0.8;
+    ctx.font = `${Math.round(qrSizePx * 0.048)}px Segoe UI, Arial, sans-serif`;
+    ctx.fillText(sub, totalW / 2, textY + Math.round(qrSizePx * 0.065) + Math.round(qrSizePx * 0.056));
+    ctx.globalAlpha = 1;
+  }
+
+  return out;
+}
+
 // ── FULLSCREEN QR ─────────────────────────────────────────────────────────────
 function showQRFullscreen() {
   const fs = document.getElementById('qr-fullscreen');
-  const canvas = document.getElementById('qr-fullscreen-canvas');
-  const fsSize = Math.min(window.innerWidth - 60, window.innerHeight - 120, 380);
-  drawQROnCanvas(buildVCardForQR(), canvas, fsSize, cardData.colorPrimary);
-  document.getElementById('qr-fullscreen-name').textContent =
-    [cardData.prenom, cardData.nom].filter(Boolean).join(' ') || 'Ma carte';
+  const fsContainer = document.getElementById('qr-fullscreen-canvas').parentElement || fs;
+  const maxSide = Math.min(window.innerWidth - 60, window.innerHeight - 100, 340);
+  const styled = buildStyledQRCanvas(maxSide);
+  styled.style.maxWidth = '90vw';
+  styled.style.maxHeight = '80vh';
+
+  // Remplacer le canvas existant
+  const oldCanvas = document.getElementById('qr-fullscreen-canvas');
+  styled.id = 'qr-fullscreen-canvas';
+  oldCanvas.replaceWith(styled);
+
   fs.classList.add('show');
 }
 function hideQRFullscreen() {
@@ -1002,44 +1063,10 @@ document.getElementById('qr-fullscreen').addEventListener('click', function(e) {
 
 // ── TÉLÉCHARGEMENT QR PERSONNALISÉ ────────────────────────────────────────────
 function downloadQR() {
-  const qrSize = 300;
-  const padding = 28;
-  const textHeight = 60;
-  const totalW = qrSize + padding * 2;
-  const totalH = qrSize + padding * 2 + textHeight;
-
-  const c = document.createElement('canvas');
-  c.width = totalW;
-  c.height = totalH;
-  const ctx = c.getContext('2d');
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, totalW, totalH);
-
-  // QR dans un canvas temporaire puis centré
-  const qrCanvas = document.createElement('canvas');
-  drawQROnCanvas(buildVCardForQR(), qrCanvas, qrSize, cardData.colorPrimary);
-
-  // Centrer le QR horizontalement
-  const qrX = Math.round((totalW - qrCanvas.width) / 2);
-  ctx.drawImage(qrCanvas, qrX, padding);
-
-  // Texte centré sous le QR
-  const name = [cardData.prenom, cardData.nom].filter(Boolean).join(' ') || 'Ma carte';
-  const sub = cardData.entreprise || cardData.titre || '';
-  const textY = padding + qrCanvas.height + padding;
-  ctx.fillStyle = '#222';
-  ctx.font = 'bold 18px Segoe UI, Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(name, totalW / 2, textY + 18);
-  if (sub) {
-    ctx.fillStyle = '#777';
-    ctx.font = '13px Segoe UI, Arial, sans-serif';
-    ctx.fillText(sub, totalW / 2, textY + 40);
-  }
-
+  const styled = buildStyledQRCanvas(320);
+  const name = [cardData.prenom, cardData.nom].filter(Boolean).join(' ') || 'carte';
   const a = document.createElement('a');
-  a.href = c.toDataURL('image/png');
+  a.href = styled.toDataURL('image/png');
   a.download = `qr-contact-${name.replace(/\s+/g, '-').toLowerCase()}.png`;
   a.click();
   showToast('QR code téléchargé !');
