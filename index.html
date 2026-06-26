@@ -1040,7 +1040,7 @@ function generateQR() {
     const photoWasRemoved = wouldHavePhoto && !vcf.includes('PHOTO');
     warn.style.display = photoWasRemoved ? 'block' : 'none';
   }
-  drawQROnCanvas(vcf, document.getElementById('qr-canvas'), 200, cardData.colorPrimary);
+  drawQROnCanvas(vcf, document.getElementById('qr-canvas'), 200, '#000000');
 }
 
 function drawQROnCanvas(text, canvas, size, colorDark) {
@@ -1110,7 +1110,7 @@ function buildStyledQRCanvas(qrSizePx) {
 
   // QR foncé dans la zone blanche
   const qrCanvas = document.createElement('canvas');
-  drawQROnCanvas(buildVCardForQR(), qrCanvas, qrSizePx, cardData.colorPrimary);
+  drawQROnCanvas(buildVCardForQR(), qrCanvas, qrSizePx, '#000000');
   ctx.drawImage(qrCanvas, padding, padding, qrSizePx, qrSizePx);
 
   // Bordure couleur accent
